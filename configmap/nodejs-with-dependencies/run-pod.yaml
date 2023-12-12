@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-nodejs-with-dependencies-run-pod
+  labels:
+    demo: configmap-nodejs-with-dependencies-run-pod
+    inline-code-editor-demo: 'true'
+data:
+  package.json: |
+    {
+      "type": "module",
+      "dependencies": {
+        "chalk": "*"
+      }
+    }
+  index.js: |
+    import { Chalk } from 'chalk';
+    // enforce colors
+    const chalk = new Chalk({ level: 3 });
+    console.log(chalk.blue('Hello world!'));
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-nodejs-with-dependencies-run-pod
+  labels:
+    demo: configmap-nodejs-with-dependencies-run-pod
+    inline-code-editor-demo: 'true'
+spec:
+  containers:
+    - name: runtime
+      image: node
+      volumeMounts:
+        - name: configmap
+          mountPath: /configmap
+        - name: workdir
+          mountPath: /workdir
+      workingDir: /workdir
+      command:
+        - /bin/bash
+        - -e
+        - -c
+        - "cp /configmap/* /workdir/; npm install; node index.js"
+  volumes:
+    - name: configmap
+      configMap:
+        name: configmap-nodejs-with-dependencies-run-pod
+    - name: workdir
+      emptyDir:
+        sizeLimit: 500Mi
+  restartPolicy: Never

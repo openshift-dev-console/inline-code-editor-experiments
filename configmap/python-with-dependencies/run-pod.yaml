@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-python-with-dependencies-run-pod
+  labels:
+    demo: configmap-python-with-dependencies-run-pod
+    inline-code-editor-demo: 'true'
+data:
+  requirements.txt: |
+    colored
+  script.py: |
+    from colored import Fore, Back, Style
+    print(f'{Fore.white}{Back.green}Hello world!{Style.reset}')
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-python-with-dependencies-run-pod
+  labels:
+    demo: configmap-python-with-dependencies-run-pod
+    inline-code-editor-demo: 'true'
+spec:
+  containers:
+    - name: runtime
+      image: python
+      volumeMounts:
+        - name: configmap
+          mountPath: /configmap
+        - name: workdir
+          mountPath: /workdir
+      workingDir: /workdir
+      command:
+        - /bin/bash
+        - -e
+        - -c
+        - "cp /configmap/* /workdir/; pip install --no-cache-dir -r requirements.txt; python script.py"
+  volumes:
+    - name: configmap
+      configMap:
+        name: configmap-python-with-dependencies-run-pod
+    - name: workdir
+      emptyDir:
+        sizeLimit: 500Mi
+  restartPolicy: Never
