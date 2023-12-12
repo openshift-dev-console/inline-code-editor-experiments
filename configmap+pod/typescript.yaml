@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-typescript-run-pod
+  labels:
+    demo: configmap-typescript-run-pod
+    inline-code-editor-demo: 'true'
+data:
+  package.json: |
+    {
+      "scripts": {
+        "build": "tsc index.ts",
+        "start": "node index.js"
+      },
+      "dependencies": {
+        "typescript": "*"
+      }
+    }
+  index.ts: |
+    const message: string = 'Hello world!';
+    console.log(message);
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-typescript-run-pod
+  labels:
+    demo: configmap-typescript-run-pod
+    inline-code-editor-demo: 'true'
+spec:
+  containers:
+    - name: runtime
+      image: node
+      volumeMounts:
+        - name: configmap
+          mountPath: /configmap
+        - name: workdir
+          mountPath: /workdir
+      workingDir: /workdir
+      command:
+        - /bin/bash
+        - -e
+        - -c
+        - "cp /configmap/* /workdir/; npm install; npm run build; npm start"
+  volumes:
+    - name: configmap
+      configMap:
+        name: configmap-typescript-run-pod
+    - name: workdir
+      emptyDir:
+        sizeLimit: 500Mi
+  restartPolicy: Never
