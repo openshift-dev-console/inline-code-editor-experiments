@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-golang-run-pod
+  labels:
+    demo: configmap-golang-run-pod
+    inline-code-editor-demo: 'true'
+data:
+  go.mod: |
+    module example
+
+    go 1.21.4
+  main.go: |
+    package main
+
+    import "fmt"
+
+    func main() {
+      fmt.Println("Hello world!")
+    }
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: configmap-golang-run-pod
+  labels:
+    demo: configmap-golang-run-pod
+    inline-code-editor-demo: 'true'
+spec:
+  containers:
+    - name: runtime
+      image: golang
+      volumeMounts:
+        - name: data
+          mountPath: /workdir
+      workingDir: /workdir
+      command: ["go"]
+      args: ["run", "."]
+  volumes:
+    - name: data
+      configMap:
+        name: configmap-golang-run-pod
+  restartPolicy: Never
